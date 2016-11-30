@@ -1,0 +1,139 @@
+
+索引的创建和使用：
+
+1. IS NULL 与 IS NOT NULL   不能用null作索引，任何包含null值的列都将不会被包含在索引中。即使索引有多列这样的情况下，只要这些列中有一列含有null，   该列就会从索引中排除。也就是说如果某列存在空值，即使对该列建索引也不会提高性能。    任何在where子句中使用is null或is not null的语句优化器是不允许使用索引的。
+
+应该建索引的字段：1.经常作为查询条件的字段2.外键3.经常需要排序的字段4.分组排序的字段
+ 
+应该少建或者不建索引的字段有：1.表记录太少，2.经常需要插入，删除，修改的表，3.表中数据重复且分布平均的字段
+ 
+一些SQL的写法会限制索引的使用：1.where子句中如果使用in、or、like、!= <>，均会导致索引不能正常使用，将"<>"换成">and<";将"is not null "换成">=chr(0)";2.使用函数时，该列就不能使用索引。3.比较不匹配数据类型时，该索引将会被忽略。
+
+
+三大框架是用来开发web应用程序中使用的.
+Struts:基于MVC的充当了其中的试图层和控制器
+Hibernate:做持久化的,对JDBC轻量级的封装,使得我们能过面向对象的操作数据库
+Spring: 采用了控制反转的技术,管理Bean,降低了各层之间的耦合.
+
+public class Main {
+     public static void main(String[] args) {
+          /******************** IOC控制反转和依赖注入 ***************************/
+          // 利用容器，通过xml文件直接注入属性值，在Main类中只添加需要的
+          // Chinese和American，当类和方法修改时，代码完全不用修改，只需要修改xml文件即可，彻底实现了解耦
+          BeanFactory beanFactory = new BeanFactory();
+          beanFactory.init("/config.xml");
+          UserBean userBean = (UserBean) beanFactory.getBean("userBean");
+          System.out.println("userName=" + userBean.getUserName());
+          System.out.println("password=" + userBean.getPassword());
+     }
+}
+
+
+/******************** IOC控制反转和依赖注入 ***************************/
+// 下面是Spring的IOC实现：Bean工厂
+class BeanFactory {
+     private Map<String, Object> beanMap = new HashMap<String, Object>();
+
+     public void init(String fileName) {
+          try {
+               // 读取指定的配置文件
+               SAXReader reader = new SAXReader();
+               // System.out.println(xmlpath);
+               String realPathString = new File("").getCanonicalPath();
+               Document document = reader.read(new File(realPathString + "/src/com/devin/") + fileName);
+               Element root = document.getRootElement();
+               Element foo;
+               // 遍历bean
+               for (Iterator i = root.elementIterator("bean"); i.hasNext();) {
+                    foo = (Element) i.next();
+                    // 获取bean的属性id和class
+                    Attribute id = foo.attribute("id");
+                    Attribute cls = foo.attribute("class");
+                    // 利用Java反射机制，通过class的名称获取Class对象
+                    Class bean = Class.forName(cls.getText());
+                    // 获取对应class的信息
+                    java.beans.BeanInfo info = java.beans.Introspector.getBeanInfo(bean);
+                    // 获取其属性描述
+                    java.beans.PropertyDescriptor pd[] = info.getPropertyDescriptors();
+                    // 设置值的方法
+                    Method mSet = null;
+                    // 创建一个对象
+                    Object obj = bean.newInstance();
+                    // 遍历该bean的property属性
+                    for (Iterator ite = foo.elementIterator("property"); ite.hasNext();) {
+                         Element foo2 = (Element) ite.next();
+                         // 获取该property的name属性
+                         Attribute name = foo2.attribute("name");
+                         String value = null;
+                         // 获取该property的子元素value的值
+                         for (Iterator ite1 = foo2.elementIterator("value"); ite1.hasNext();) {
+                              Element node = (Element) ite1.next();
+                              value = node.getText();
+                              break;
+                         }
+                         for (int k = 0; k < pd.length; k++) {
+                              if (pd[k].getName().equalsIgnoreCase(name.getText())) {
+                                   mSet = pd[k].getWriteMethod();
+                                   mSet.invoke(obj, value);
+                              }
+                         }
+                    }
+
+                    // 将对象放入beanMap中，其中key为id值，value为对象
+                    beanMap.put(id.getText(), obj);
+               }
+          } catch (Exception e) {
+               System.out.println(e.toString());
+          }
+     }
+
+     // 通过bean的id获取bean的对象.
+     public Object getBean(String beanName) {
+          Object obj = beanMap.get(beanName);
+          return obj;
+     }
+}
+
+
+UserBean.java
+
+public class UserBean {
+     private String userName;
+     private String password;
+
+     public String getPassword() {
+          return password;
+     }
+
+     public String getUserName() {
+          return userName;
+     }
+
+     public void setUserName(String userName) {
+          this.userName = userName;
+     }
+
+     public void setPassword(String password) {
+          this.password = password;
+     }
+}
+
+config.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+     <bean id="userBean" class="com.devin.UserBean">
+          <property name="userName">
+               <value>张三</value>
+          </property>
+          <property name="password">
+               <value>Jack</value>
+          </property>
+     </bean>
+</beans>
+
+
+
+git 是分布式的，SVN不是，是最核心的区别
+
+电池信息查询powercfg –energy
